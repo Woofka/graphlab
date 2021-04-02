@@ -24,11 +24,69 @@ void Graph::readGraph(string fileName) {
 }
 
 void Graph::readGraphAdjMatrix(string fileName) {
+	char graphType;
 
+	ifstream fileStream(fileName);
+	if (!fileStream.is_open()) return;
+
+	fileStream >> graphType;
+	fileStream >> this->verticesNum;
+	fileStream >> this->isDirected;
+	fileStream >> this->isWeighted;
+	this->representation = Representation::ADJACENCY_MATRIX;
+
+	vector<int> row;
+	int tmp;
+	for (int i = 0; i < this->verticesNum; i++) {
+		row.clear();
+		for (int j = 0; j < this->verticesNum; j++) {
+			fileStream >> tmp;
+			row.push_back(tmp);
+		}
+		this->adjMatrix.push_back(row);
+	}
 }
 
 void Graph::readGraphAdjList(string fileName) {
+	char graphType;
 
+	ifstream fileStream(fileName);
+	if (!fileStream.is_open()) return;
+
+	fileStream >> graphType;
+	fileStream >> this->verticesNum;
+	fileStream >> this->isDirected;
+	fileStream >> this->isWeighted;
+	this->representation = Representation::ADJACENCY_LIST;
+
+	string line;
+	getline(fileStream, line);
+	int v, w;
+	set<tuple<int, int, int>> wSet;
+	set<pair<int, int>> uwSet;
+	for (int i = 1; i <= this->verticesNum; i++) {
+		wSet.clear();
+		uwSet.clear();
+		getline(fileStream, line);
+		istringstream iss(line);
+		cout << line << endl;
+		while (iss >> v) {
+			if (this->isWeighted) {
+				iss >> w;
+				wSet.insert(make_tuple(i, v, w));
+			}
+			else {
+				uwSet.insert(make_pair(i, v));
+			}
+		}
+
+		if (this->isWeighted) {
+			this->adjListWeighted.push_back(wSet);
+		}
+		else {
+			this->adjList.push_back(uwSet);
+		}
+	}
 }
 
 void Graph::readGraphEdgeList(string fileName) {
@@ -101,11 +159,69 @@ void Graph::writeGraph(string fileName) {
 }
 
 void Graph::writeGraphAdjMatrix(string fileName) {
+	ofstream fileStream(fileName);
+	if (!fileStream.is_open()) return;
 
+	fileStream << 'C' << ' ' << this->verticesNum << endl;
+	fileStream << this->isDirected << ' ' << this->isWeighted << endl;
+
+	bool firstElem;
+	for (vector<int> row : this->adjMatrix) {
+		firstElem = true;
+		for (int elem : row) {
+			if (firstElem) {
+				firstElem = false;
+			}
+			else {
+				fileStream << " ";
+			}
+			fileStream << elem;
+		}
+		fileStream << endl;
+	}
 }
 
 void Graph::writeGraphAdjList(string fileName) {
+	ofstream fileStream(fileName);
+	if (!fileStream.is_open()) return;
 
+	fileStream << 'L' << ' ' << this->verticesNum << endl;
+	fileStream << this->isDirected << ' ' << this->isWeighted << endl;
+
+	bool firstElem;
+	int v1, v2, w;
+	if (this->isWeighted) {
+		for (set<tuple<int, int, int>> adjVerticesSet : this->adjListWeighted) {
+			firstElem = true;
+			for (tuple<int, int, int> adjVertices : adjVerticesSet) {
+				tie(v1, v2, w) = adjVertices;
+				if (firstElem) {
+					firstElem = false;
+				}
+				else {
+					fileStream << " ";
+				}
+				fileStream << v2 << " " << w;
+			}
+			fileStream << endl;
+		}
+	}
+	else {
+		for (set<pair<int, int>> adjVerticesSet : this->adjList) {
+			firstElem = true;
+			for (pair<int, int> adjVertices : adjVerticesSet) {
+				tie(v1, v2) = adjVertices;
+				if (firstElem) {
+					firstElem = false;
+				}
+				else {
+					fileStream << " ";
+				}
+				fileStream << v2;
+			}
+			fileStream << endl;
+		}
+	}
 }
 
 void Graph::writeGraphEdgeList(string fileName) {
